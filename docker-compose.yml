@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  block-builder:
+    container_name: block-builder
+    build:
+      context: ${PWD}/repos/block-builder
+      dockerfile: ${PWD}/Dockerfile.block-builder
+    image: block-builder
+    command: /app/jwt.hex http://execution-layer
+    ports:
+      - "8561:8561"
+    environment:
+      - RUST_LOG=debug
+    networks:
+      - igra-l2-network
+    volumes:
+      - ${PWD}/jwt.hex:/app/jwt.hex
+    depends_on:
+      - execution-layer
+
+  execution-layer:
+    container_name: execution-layer
+    image: ghcr.io/paradigmxyz/reth
+    entrypoint: /root/reth/run-igra-dev-el.sh
+    ports:
+      - "9001:9001"
+    environment:
+      - RUST_LOG=info,sync::stages=trace,downloaders=trace,debug
+    networks:
+      - igra-l2-network
+    volumes:
+      - reth_chaindata:/root/reth/data
+      - ./jwt.hex:/root/reth/jwt.hex
+      - ./repos/execution-layer/genesis.json:/root/reth/genesis.json
+      - ./repos/execution-layer/run-igra-dev-el.sh:/root/reth/run-igra-dev-el.sh
+
+networks:
+  igra-l2-network:
+
+volumes:
+  reth_chaindata:
