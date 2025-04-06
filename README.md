@@ -2,9 +2,12 @@
 
 ## Overview
 
-Igra Orchestra is a system that orchestrates two main services:
+Igra Orchestra is a system that orchestrates the following services:
 - **block-builder**: A custom block builder service ([GitHub](https://github.com/IgraLabs/block-builder))
 - **execution-layer**: A reth-based execution layer ([GitHub](https://github.com/IgraLabs/execution-layer))
+- **kaswallet**: An internal wallet service for Igra L1 ([GitHub](https://github.com/IgraLabs/kaswallet))
+- **rpc-provider**: RPC provider for client interactions ([GitHub](https://github.com/IgraLabs/igra-rpc-provider))
+- **viaduct**: A service that monitors Kaspa L1, extracts L2-relevant data, and ensures reliable transmission to the L2 network ([GitHub](https://github.com/IgraLabs/rusty-kaspa-private))
 
 This guide explains how to set up and run the system locally for development.
 
@@ -43,14 +46,18 @@ This script clones the service repositories and checks out specified branches:
 # Make script executable
 chmod +x setup-repos.sh
 
-# Run with default branches (main)
+# Run with default branches
 ./setup-repos.sh
 
-# Or specify custom branches
-./setup-repos.sh develop feature-branch
+# Or specify custom branches (in order: block-builder, execution-layer, kaswallet, igra-rpc-provider, rusty-kaspa)
+./setup-repos.sh main main main branch_name another_branch
 ```
 
-### 4. Build and Run Services
+### 4. Setup Wallet Keys
+
+The system uses a keys.json file for the kaswallet service. A default one is provided, but you can create your own if needed.
+
+### 5. Build and Run Services
 
 ```bash
 # Start the services
@@ -83,8 +90,25 @@ JWT is used for secure authentication between the block-builder and execution-la
 - Uses the ghcr.io/paradigmxyz/reth image
 - Runs with a custom genesis configuration
 - Uses a startup script from the repository
-- Exposes multiple ports:
-  - 9001: Metrics
+- Exposes port 9001 for metrics
+
+### RPC Provider
+
+- Provides RPC endpoints for client interaction
+- Listens on port 8535
+- Depends on kaswallet service
+
+### Kaswallet
+
+- Handles key management
+- Uses a keys.json file for storing keys
+- Listens on port 8082 (temporary until we fix access to the kaswallet service inside the docker network)
+
+### Viaduct
+
+- Built from rusty-kaspa
+- Provides connectivity to the Kaspa network
+- Uses persistent storage for blockchain data
 
 ## Maintenance
 
@@ -93,8 +117,8 @@ JWT is used for secure authentication between the block-builder and execution-la
 To update repositories to the latest code:
 
 ```bash
-# Pull latest changes for specific branches
-./setup-repos.sh main main
+# Pull latest changes for all components (using their default branches)
+./setup-repos.sh
 ```
 
 ### Cleaning Up
@@ -115,7 +139,7 @@ If you encounter container name conflicts:
 
 ```bash
 # Remove existing containers
-docker rm -f block-builder execution-layer
+docker rm -f block-builder execution-layer rpc-provider kaswallet viaduct
 
 # Then try again
 docker compose up
@@ -128,7 +152,6 @@ If you have problems with volume mounts:
 1. Ensure files exist and have proper permissions
 2. For jwt.hex, ensure it has mode 600
 3. Check that paths in docker-compose.yml match your directory structure
-
 
 ## License
 

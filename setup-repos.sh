@@ -2,8 +2,64 @@
 # setup-repos.sh - Clone and setup repositories for Igra Orchestra
 
 # Function for timestamped log messages
-log() {
+function log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+}
+
+# Function to clone a repository if it doesn't exist
+function clone_repo() {
+    local repo_name=$1
+    local repo_url=$2
+
+    log "Setting up $repo_name repository"
+    if [ ! -d "repos/$repo_name" ]; then
+        log "Cloning $repo_name repository..."
+        git clone $repo_url repos/$repo_name
+        if [ $? -eq 0 ]; then
+            log "Successfully cloned $repo_name repository"
+        else
+            log "ERROR: Failed to clone $repo_name repository"
+            exit 1
+        fi
+    else
+        log "$repo_name repository already exists, skipping clone"
+    fi
+}
+
+# Function to configure a repository
+function configure_repo() {
+    local repo_name=$1
+    local branch=$2
+
+    log "Configuring $repo_name repository"
+    cd repos/$repo_name
+    log "Current directory: $(pwd)"
+
+    log "Fetching latest changes..."
+    git fetch
+    if [ $? -ne 0 ]; then
+        log "ERROR: Failed to fetch changes for $repo_name"
+        exit 1
+    fi
+
+    log "Checking out branch: $branch"
+    git checkout $branch
+    if [ $? -ne 0 ]; then
+        log "ERROR: Failed to checkout branch $branch for $repo_name"
+        exit 1
+    fi
+
+    log "Pulling latest changes..."
+    git pull
+    if [ $? -ne 0 ]; then
+        log "ERROR: Failed to pull latest changes for $repo_name"
+        exit 1
+    fi
+
+    log "Current branch info for $repo_name:"
+    git --no-pager branch -v
+
+    cd ../..
 }
 
 log "Starting repository setup"
@@ -11,10 +67,28 @@ log "Starting repository setup"
 # Default branches
 BLOCK_BUILDER_BRANCH=${1:-main}
 EXECUTION_LAYER_BRANCH=${2:-main}
+KASWALLET_BRANCH=${3:-main}
+IGRA_RPC_PROVIDER_BRANCH=${4:-igor/fix/docker-workaround}
+RUSTY_KASPA_BRANCH=${5:-new_BB_syntax_rebased_to_v1}
 
+# Repository information
+REPOS=("block-builder" "execution-layer" "kaswallet" "igra-rpc-provider" "rusty-kaspa-private")
+URLS=(
+    "git@github.com:IgraLabs/block-builder.git"
+    "git@github.com:IgraLabs/execution-layer.git"
+    "git@github.com:IgraLabs/kaswallet.git"
+    "git@github.com:IgraLabs/igra-rpc-provider.git"
+    "git@github.com:IgraLabs/rusty-kaspa-private.git"
+)
+BRANCHES=("$BLOCK_BUILDER_BRANCH" "$EXECUTION_LAYER_BRANCH" "$KASWALLET_BRANCH" "$IGRA_RPC_PROVIDER_BRANCH" "$RUSTY_KASPA_BRANCH")
+
+# Log branch information
 log "Using branches:"
 log "  - block-builder: $BLOCK_BUILDER_BRANCH"
 log "  - execution-layer: $EXECUTION_LAYER_BRANCH"
+log "  - kaswallet: $KASWALLET_BRANCH"
+log "  - igra-rpc-provider: $IGRA_RPC_PROVIDER_BRANCH"
+log "  - rusty-kaspa-private: $RUSTY_KASPA_BRANCH"
 
 # Create repos directory
 log "Creating repos directory if it doesn't exist..."
@@ -25,99 +99,18 @@ else
     log "Directory repos already exists"
 fi
 
-# Setup block-builder repository
-log "Setting up block-builder repository"
-if [ ! -d "repos/block-builder" ]; then
-    log "Cloning block-builder repository..."
-    git clone git@github.com:IgraLabs/block-builder.git repos/block-builder
-    if [ $? -eq 0 ]; then
-        log "Successfully cloned block-builder repository"
-    else
-        log "ERROR: Failed to clone block-builder repository"
-        exit 1
-    fi
-else
-    log "block-builder repository already exists, skipping clone"
-fi
-
-# Setup execution-layer repository
-log "Setting up execution-layer repository"
-if [ ! -d "repos/execution-layer" ]; then
-    log "Cloning execution-layer repository..."
-    git clone git@github.com:IgraLabs/execution-layer.git repos/execution-layer
-    if [ $? -eq 0 ]; then
-        log "Successfully cloned execution-layer repository"
-    else
-        log "ERROR: Failed to clone execution-layer repository"
-        exit 1
-    fi
-else
-    log "execution-layer repository already exists, skipping clone"
-fi
-
-# Configure block-builder repository
-log "Configuring block-builder repository"
-cd repos/block-builder
-log "Current directory: $(pwd)"
-log "Fetching latest changes..."
-git fetch
-if [ $? -ne 0 ]; then
-    log "ERROR: Failed to fetch changes for block-builder"
-    exit 1
-fi
-
-log "Checking out branch: $BLOCK_BUILDER_BRANCH"
-git checkout $BLOCK_BUILDER_BRANCH
-if [ $? -ne 0 ]; then
-    log "ERROR: Failed to checkout branch $BLOCK_BUILDER_BRANCH for block-builder"
-    exit 1
-fi
-
-log "Pulling latest changes..."
-git pull
-if [ $? -ne 0 ]; then
-    log "ERROR: Failed to pull latest changes for block-builder"
-    exit 1
-fi
-
-log "Current branch info for block-builder:"
-git branch -v
-
-# Configure execution-layer repository
-log "Configuring execution-layer repository"
-cd ../execution-layer
-log "Current directory: $(pwd)"
-log "Fetching latest changes..."
-git fetch
-if [ $? -ne 0 ]; then
-    log "ERROR: Failed to fetch changes for execution-layer"
-    exit 1
-fi
-
-log "Checking out branch: $EXECUTION_LAYER_BRANCH"
-git checkout $EXECUTION_LAYER_BRANCH
-if [ $? -ne 0 ]; then
-    log "ERROR: Failed to checkout branch $EXECUTION_LAYER_BRANCH for execution-layer"
-    exit 1
-fi
-
-log "Pulling latest changes..."
-git pull
-if [ $? -ne 0 ]; then
-    log "ERROR: Failed to pull latest changes for execution-layer"
-    exit 1
-fi
-
-log "Current branch info for execution-layer:"
-git branch -v
-
-# Return to root directory
-cd ../../
-log "Returned to directory: $(pwd)"
+# Clone and configure repositories
+for i in "${!REPOS[@]}"; do
+    clone_repo "${REPOS[$i]}" "${URLS[$i]}"
+    configure_repo "${REPOS[$i]}" "${BRANCHES[$i]}"
+done
 
 log "==REPOSITORY SETUP COMPLETED SUCCESSFULLY=="
 log "Repositories configured successfully:"
 log "  - block-builder: $BLOCK_BUILDER_BRANCH"
 log "  - execution-layer: $EXECUTION_LAYER_BRANCH"
+log "  - kaswallet: $KASWALLET_BRANCH"
+log "  - igra-rpc-provider: $IGRA_RPC_PROVIDER_BRANCH"
+log "  - rusty-kaspa-private: $RUSTY_KASPA_BRANCH"
 log ""
 log "You can now run docker-compose build && docker-compose up"

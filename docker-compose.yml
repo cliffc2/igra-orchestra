@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   block-builder:
     container_name: block-builder
@@ -13,7 +11,7 @@ services:
     environment:
       - RUST_LOG=debug
     networks:
-      - igra-l2-network
+      - igra-network
     volumes:
       - ${PWD}/jwt.hex:/app/jwt.hex
     depends_on:
@@ -28,15 +26,64 @@ services:
     environment:
       - RUST_LOG=info,sync::stages=trace,downloaders=trace,debug
     networks:
-      - igra-l2-network
+      - igra-network
     volumes:
-      - reth_chaindata:/root/reth/data
       - ./jwt.hex:/root/reth/jwt.hex
       - ./repos/execution-layer/genesis.json:/root/reth/genesis.json
       - ./repos/execution-layer/run-igra-dev-el.sh:/root/reth/run-igra-dev-el.sh
 
+  rpc-provider:
+    container_name: rpc-provider
+    build:
+      context: ${PWD}/repos/igra-rpc-provider
+      dockerfile: ${PWD}/Dockerfile.rpc-provider
+    image: rpc-provider
+    environment:
+      - RUST_LOG=debug
+      - KASWALLET_PASSWORD=''
+    networks:
+      - igra-network
+    depends_on:
+      - kaswallet
+    ports:
+      - "8535:8535"
+
+  kaswallet:
+    container_name: kaswallet
+    build:
+      context: ${PWD}/repos/kaswallet
+      dockerfile: ${PWD}/Dockerfile.kaswallet
+    image: kaswallet
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - RUST_LOG=debug
+    networks:
+      - igra-network
+    volumes:
+      - ${PWD}/keys.json:/app/keys.json
+    command: ["--devnet", "--logs-level=debug", "--keys-file", "/app/keys.json", "--server", "ws://host.docker.internal:17610", "--listen", "0.0.0.0:8082"]
+    ports:
+      - "8082:8082"
+
+  viaduct:
+    container_name: viaduct
+    build:
+      context: ${PWD}/repos/rusty-kaspa-private
+      dockerfile: ${PWD}/Dockerfile.viaduct
+    image: viaduct
+    volumes:
+      - viaduct_data:/app/storage
+    environment:
+      - RUST_LOG=debug
+    networks:
+      - igra-network
+    command: ["--ip-port=host.docker.internal:17610"]
+    depends_on:
+      - block-builder
+
 networks:
-  igra-l2-network:
+  igra-network:
 
 volumes:
-  reth_chaindata:
+  viaduct_data:
