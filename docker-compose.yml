@@ -72,15 +72,17 @@ services:
       context: ${PWD}/repos/rusty-kaspa-private
       dockerfile: ${PWD}/Dockerfile.viaduct
     image: viaduct
-    volumes:
-      - viaduct_data:/app/storage
     environment:
       - RUST_LOG=debug
+      - REPLAY_ON_ERROR=-1
+      - SYNC_THREADS=64
+    volumes:
+      - viaduct_data:/app/storage
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
       - igra-network
-    command: ["--ip-port=host.docker.internal:17610"]
+    command: ["--ip-port=host.docker.internal:17610", "--bb-ip-port=block-builder:8561"]
     depends_on:
       - block-builder
 
