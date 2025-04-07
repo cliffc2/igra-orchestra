@@ -76,6 +76,8 @@ services:
       - viaduct_data:/app/storage
     environment:
       - RUST_LOG=debug
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - igra-network
     command: ["--ip-port=host.docker.internal:17610"]
