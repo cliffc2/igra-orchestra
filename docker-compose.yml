@@ -46,7 +46,7 @@ services:
     depends_on:
       - kaswallet
     ports:
-      - "8535:8535"
+      - "8545:8535"
 
   kaswallet:
     container_name: kaswallet
