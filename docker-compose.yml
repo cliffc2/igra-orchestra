@@ -6,8 +6,8 @@ services:
       dockerfile: ${PWD}/Dockerfile.block-builder
     image: block-builder
     command: /app/jwt.hex http://execution-layer
-    ports:
-      - "8561:8561"
+    expose:
+      - "8561"
     environment:
       - RUST_LOG=debug
     networks:
@@ -26,8 +26,11 @@ services:
     container_name: execution-layer
     image: ghcr.io/paradigmxyz/reth
     entrypoint: /root/reth/run-igra-dev-el.sh
-    ports:
-      - "9001:9001"
+    expose:
+      - "8545"
+      - "8546"
+      - "8551"
+      - "9001"
     environment:
       - RUST_LOG=info,sync::stages=trace,downloaders=trace,debug
     networks:
@@ -55,7 +58,9 @@ services:
     depends_on:
       - kaswallet
     ports:
-      - "8545:8535"
+      - "127.0.0.1:8535:8535"
+    expose:
+      - "8535"
     logging:
       driver: "syslog"
       options:
@@ -76,8 +81,10 @@ services:
     volumes:
       - ${PWD}/keys.json:/app/keys.json
     command: ["--devnet", "--logs-level=debug", "--keys-file", "/app/keys.json", "--server", "ws://host.docker.internal:17610", "--listen", "0.0.0.0:8082"]
+    expose:
+      - "8082"
     ports:
-      - "8082:8082"
+      - "127.0.0.1:8082:8082"
     logging:
       driver: "syslog"
       options:
@@ -93,7 +100,7 @@ services:
       - RUST_LOG=debug
       - REPLAY_ON_ERROR=-1
       - SYNC_THREADS=64
-      - MAGIC_HASH=000000000000000000000000000000000000000000000000000000000000000a
+      - MAGIC_HASH=0000000000000000000000000000000000000000000000000000000000000009
     volumes:
       - viaduct_data:/app/storage
     extra_hosts:
@@ -107,6 +114,15 @@ services:
       driver: "syslog"
       options:
         tag: "viaduct/{{.ImageName}}/{{.Name}}/{{.ID}}"
+
+  nginx:
+    image: nginx
+    volumes:
+      - ./proxy/nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - "8545:8545" # Expose to all interfaces of the host
+    networks:
+      - igra-network
 
 networks:
   igra-network:
