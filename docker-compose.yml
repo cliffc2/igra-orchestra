@@ -93,6 +93,7 @@ services:
       - RUST_LOG=debug
       - REPLAY_ON_ERROR=-1
       - SYNC_THREADS=64
+      - MAGIC_HASH=000000000000000000000000000000000000000000000000000000000000000a
     volumes:
       - viaduct_data:/app/storage
     extra_hosts:
