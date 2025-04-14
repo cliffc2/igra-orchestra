@@ -68,7 +68,7 @@ log "Starting repository setup"
 BLOCK_BUILDER_BRANCH=${1:-main}
 EXECUTION_LAYER_BRANCH=${2:-main}
 KASWALLET_BRANCH=${3:-main}
-IGRA_RPC_PROVIDER_BRANCH=${4:-igor/fix/docker-workaround}
+IGRA_RPC_PROVIDER_BRANCH=${4:-main}
 RUSTY_KASPA_BRANCH=${5:-new_BB_syntax_rebased_to_v1}
 
 # Repository information
