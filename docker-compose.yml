@@ -33,6 +33,9 @@ services:
       - "8546"
       - "8551"
       - "9001"
+    ports:
+      - "127.0.0.1:9545:8545" # Expose as a temporary solution for blockscout
+      - "127.0.0.1:9546:8546" # Expose as a temporary solution for blockscout
     environment:
       - RUST_LOG=info,sync::stages=trace,downloaders=trace,debug
     networks:
