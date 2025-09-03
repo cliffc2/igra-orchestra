@@ -3,7 +3,6 @@ name: igra-orchestra-${NETWORK}
 volumes:
   kaspad_data:
   viaduct_data:
-  kaspa_explorer_db_data:
   traefik_certs:
   reth_ipc:
     driver: local
@@ -13,7 +12,6 @@ volumes:
       o: size=10m
 networks:
   igra-network:
-  kaspa-explorer-network:
   traefik-network:
 
 x-default-logging: &default-logging
@@ -173,7 +171,6 @@ services:
   health-check-client:
     image: igranetwork/node-push-client:latest
     container_name: node-push-client
-    profiles: ["backend"]
     networks:
       - igra-network
     environment:
@@ -288,7 +285,6 @@ services:
     networks:
       - igra-network
       - traefik-network
-      - kaspa-explorer-network
     labels:
       - "traefik.enable=true"
       - "traefik.http.middlewares.strip-token.stripprefixregex.regex=^/([a-f0-9]{32})"
@@ -522,7 +518,7 @@ services:
     build:
       context: build/repos/rusty-kaspa
       dockerfile: ../../Dockerfile.kaspad
-    image: kaspad-${NETWORK}
+    image: kaspad
     profiles: ["kaspad"]
     container_name: kaspad
     expose:
@@ -533,8 +529,6 @@ services:
     ports:
       - "17210:17210"
       - "16211:16211"
-      # - "17611:17611"
-      # - "18611:18611"
     environment:
       - RUST_LOG
       - REPLAY_ON_ERROR
@@ -554,7 +548,6 @@ services:
       - kaspad_data:/app/data/
     networks:
       - igra-network
-      - kaspa-explorer-network
       - traefik-network
     labels:
       - "traefik.enable=true"
