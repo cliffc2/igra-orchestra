@@ -3,7 +3,7 @@
 #### Prerequisites
 - Docker and Docker Compose installed
 - AMD64 or ARM64 machine
-- 16GB+ RAM
+- 32GB+ RAM
 - Git and SSH access to github.com
 
 #### Steps
